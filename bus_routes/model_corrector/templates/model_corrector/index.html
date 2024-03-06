@@ -1,0 +1,101 @@
+{% extends 'model_corrector/base.html' %}
+
+{% block conent %}
+
+    <div class="grid-container">
+
+        <div class="grid-x grid-margin-x">
+            <div class="cell"><h1>Model corrector</h1></div>
+        </div>
+        <div class="grid-x grid-margin-x">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="cell">
+                    <div class="callout {{ message.tags }}" data-closable>
+                        <h5>Что-то пошло не так...</h5>
+                        <p>{{ message|safe }}</p>
+                        <button class="close-button" aria-label="Dismiss alert" type="button" data-close>
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+        </div>
+        <div class="grid-x grid-margin-x">
+
+            <form method="post" action="{% url 'edit_base' %}">
+                {% csrf_token %}
+                <div class="grid-x grid-padding-x">
+                    <div class="cell">
+                        <label>Модель: (выбирайте stop)
+                            <select id="model" name="operated">
+                                <option value="" selected="selected">Выбрать модель</option>
+                                {% for model in models %}
+                                    <option value="{{ model }}">{{ model }}</option>
+                                {% endfor %}
+                            </select>
+                        </label>
+                    </div>
+                </div>
+                <div id="wrapper" style="display: none">
+                    <div class="grid-x grid-padding-x">
+                        <div class="medium-6 cell">
+                            <label>Правильный объект
+                                <select id="original" name="original">
+                                    <option value="" selected="selected">Выбрать объект</option>
+                                </select>
+                            </label>
+                        </div>
+                        <div class="medium-6 cell">
+                            <label>Заменяемый объект
+                                <select id="change" name="change">
+                                    <option value="" selected="selected">Выбрать объект</option>
+                                </select>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="grid-x grid-padding-x">
+                        <div class="cell">
+                            <input type="submit" class="button" id="submit">
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}
+
+{% block additional_script %}
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('#model').change(function () {
+                if ($(this).val() !== '') {
+                    $.get("{% url 'get_model_objects' %}", {model: $(this).val()}).done(function (data) {
+                        let collection = JSON.parse(data.obj);
+                        console.dir("Data Loaded: " + collection);
+                        $('#wrapper').show(5);
+                        // Можно использовать для предотвращения повторного нажатия
+                        {#$('#model').attr("disabled", true);#}
+
+                        // Перебор массива
+                        for (let x = 0; x < collection.length; x++) {
+                            console.log(collection[x].pk)
+                            console.dir(collection[x].fields.name)
+                            $('#original').append($('<option>', {
+                                value: collection[x].pk,
+                                text: collection[x].fields.name
+                            }));
+                            $('#change').append($('<option>', {
+                                value: collection[x].pk,
+                                text: collection[x].fields.name
+                            }));
+
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+{% endblock %}
